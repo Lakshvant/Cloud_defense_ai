@@ -1,6 +1,6 @@
 import requests
-import random
 import xml.etree.ElementTree as ET
+import random
 
 def fetch_repository_info(username):
    
