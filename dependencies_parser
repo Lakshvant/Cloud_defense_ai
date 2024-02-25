@@ -1,0 +1,80 @@
+import requests
+import random
+import xml.etree.ElementTree as ET
+
+def fetch_repository_info(username):
+   
+    repos_url = f'https://api.github.com/users/{username}/repos'
+
+
+    response = requests.get(repos_url, headers=headers)
+    repos = response.json()
+    
+    return repos
+
+def print_repository_names(repos):
+
+    for repo in repos:
+        print(repo['name'])
+
+def select_random_repository(repos):
+    
+    random_repo = random.choice(repos)
+    selected_repo_name = random_repo['name']
+    selected_repo_name = "Cloud_defense_ai"
+    print(f"Randomly selected repository: {selected_repo_name}")
+    
+    return selected_repo_name
+
+def fetch_pom_dependencies(username, repo_name):
+    repo_url = f'https://api.github.com/repos/{username}/{repo_name}/contents'
+
+    response = requests.get(repo_url, headers=headers)
+    repo_content = response.json()
+
+    pom_found = False
+
+    for item in repo_content:
+        if item['name'] == 'pom.xml':
+            pom_found = True
+            pom_file_url = item['download_url']
+            response = requests.get(pom_file_url, headers=headers)
+            pom_content = response.content
+            
+            root = ET.fromstring(pom_content)
+       
+            namespace = root.tag.split('}')[0][1:]
+
+            dependencies = root.findall('.//{'+namespace+'}dependency')
+
+            for dependency in dependencies:
+                group_id = dependency.find('{'+namespace+'}groupId').text
+                artifact_id = dependency.find('{'+namespace+'}artifactId').text
+                
+                version_elem = dependency.find('{'+namespace+'}version')
+                if version_elem is not None:
+                    version = version_elem.text
+                else:
+                    version = "No version specified"
+
+                print(f'Dependency: {group_id}:{artifact_id}, Version: {version}')
+
+
+
+    if not pom_found:
+        print(f'No POM.XML file found in {repo_name}')
+
+
+ 
+
+if __name__ == "__main__":
+    username = 'Lakshvant'
+    access_token = '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'
+    headers = {
+        'Authorization': f'token {access_token}',
+    }
+    repos = fetch_repository_info(username)
+    print_repository_names(repos)
+    # I have hard coded selected repository to test on the input.
+    selected_repo_name = select_random_repository(repos)
+    fetch_pom_dependencies(username, selected_repo_name)
